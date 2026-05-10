@@ -8,6 +8,7 @@ export default function GradeModal({ open, onClose, student }) {
     const [grades, setGrades] = useState([])
     const [summary, setSummary] = useState({ diemTrungBinh: 0, xepLoai: '' })
     const [loading, setLoading] = useState(false)
+    const [adding, setAdding] = useState(false)
     const [form] = Form.useForm()
 
     const fetchGradesData = async () => {
@@ -34,6 +35,16 @@ export default function GradeModal({ open, onClose, student }) {
     }, [open, student])
 
     const handleAddGrade = async (values) => {
+        if (adding) return;
+        const isDuplicate = grades.some(
+            g => g.subject?.trim().toLowerCase() === values.subject?.trim().toLowerCase()
+              && g.semester === values.semester
+        );
+        if (isDuplicate) {
+            message.warning(`Môn "${values.subject}" đã có điểm ở ${values.semester}!`);
+            return;
+        }
+        setAdding(true);
         try {
             await createGrade(student.id, values)
             message.success('Thêm điểm thành công')
@@ -41,8 +52,10 @@ export default function GradeModal({ open, onClose, student }) {
             fetchGradesData()
         } catch (error) {
             if (error.response?.status !== 403) {
-            message.error('Lỗi khi thêm điểm!')
+                message.error('Lỗi khi thêm điểm!')
             }
+        } finally {
+            setAdding(false);
         }
     }
 
@@ -105,7 +118,7 @@ export default function GradeModal({ open, onClose, student }) {
                     <InputNumber min={0} max={10} step={0.1} placeholder="Điểm" style={{ width: 80 }} />
                 </Form.Item>
                 <Form.Item>
-                    <Button type="primary" htmlType="submit">Thêm điểm</Button>
+                    <Button type="primary" htmlType="submit" loading={adding} disabled={adding}>Thêm điểm</Button>
                 </Form.Item>
             </Form>
 

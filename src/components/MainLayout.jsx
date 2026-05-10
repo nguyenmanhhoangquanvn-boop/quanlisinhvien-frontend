@@ -17,7 +17,6 @@ const MainLayout = ({ children }) => {
   const role = localStorage.getItem('role') || '';
   const isAdmin = role === 'ROLE_ADMIN' || role === 'ADMIN';
 
-  // Đóng menu khi click ra ngoài
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
@@ -25,14 +24,7 @@ const MainLayout = ({ children }) => {
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
-    const menuItemStyle = (bg, color) => ({
-    padding: '11px 16px',
-    display: 'flex', alignItems: 'center', gap: 10,
-    cursor: 'pointer', color, fontWeight: 600, fontSize: 14,
-    background: bg, transition: 'background .15s',
-  });
-
-  return () => document.removeEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const handleLogout = () => {
@@ -122,7 +114,7 @@ const MainLayout = ({ children }) => {
                       onClick={() => { setMenuOpen(false); setPwOpen(true); }}
                       style={menuItemStyle('#f0fdf4', '#16a34a')}
                       onMouseEnter={e => e.currentTarget.style.background = '#dcfce7'}
-                      onMouseLeave={e => e.currentTarget.style.background = 'white'}
+                      onMouseLeave={e => e.currentTarget.style.background = '#f0fdf4'}
                     >
                       <KeyRound size={15} /> Đổi mật khẩu
                     </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   Table, Button, Input, Select, Modal, Form, Tag, Space,
   message, Popconfirm, Avatar, Tooltip, Badge, DatePicker
@@ -13,7 +13,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
 const { Option } = Select;
-const API = 'http://localhost:8080/api';
+const API = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 const HOC_VI = ['Cử nhân', 'Thạc sĩ', 'Tiến sĩ', 'Phó Giáo sư', 'Giáo sư'];
 const STATUS_LIST = ['Đang dạy', 'Nghỉ phép', 'Đã nghỉ'];
 const GIOI_TINH = ['Nam', 'Nữ', 'Khác'];
@@ -34,7 +34,9 @@ export default function LecturerManagement() {
   const [detailOpen, setDetailOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [selectedLecturer, setSelectedLecturer] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
   const [form] = Form.useForm();
+  const debounceTimer = useRef(null);
 
   const token = localStorage.getItem('token');
   const headers = { Authorization: `Bearer ${token}` };
@@ -58,7 +60,11 @@ export default function LecturerManagement() {
     setLoading(false);
   };
 
-  useEffect(() => { fetchAll(); }, [search, filterKhoa, filterStatus]);
+  useEffect(() => {
+    clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => { fetchAll(); }, 400);
+    return () => clearTimeout(debounceTimer.current);
+  }, [search, filterKhoa, filterStatus]);
 
   const openAdd = () => { setEditingId(null); form.resetFields(); setModalOpen(true); };
   const openEdit = (r) => {
@@ -72,8 +78,14 @@ export default function LecturerManagement() {
   };
 
   const handleSubmit = async () => {
+    if (submitting) return;
+    let values;
     try {
-      const values = await form.validateFields();
+      values = await form.validateFields();
+    } catch { return; }
+
+    setSubmitting(true);
+    try {
       const payload = {
         ...values,
         khoa: values.khoaId ? { id: values.khoaId } : null,
@@ -91,8 +103,12 @@ export default function LecturerManagement() {
       setModalOpen(false);
       fetchAll();
     } catch (e) {
-      const msg = e.response?.data || 'Lỗi xử lý!';
-      message.error(typeof msg === 'string' ? msg : 'Lỗi xử lý!');
+      const msg = e.response?.data?.message
+        || (typeof e.response?.data === 'string' ? e.response.data : null)
+        || 'Lỗi xử lý!';
+      message.error(msg);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -257,7 +273,8 @@ export default function LecturerManagement() {
       <Modal title={editingId ? '✏️ Chỉnh sửa giảng viên' : '➕ Thêm giảng viên mới'}
         open={modalOpen} onCancel={() => setModalOpen(false)} onOk={handleSubmit}
         okText={editingId ? 'Cập nhật' : 'Thêm mới'}
-        okButtonProps={{ style: { background: '#8b5cf6' } }} width={700} centered>
+        confirmLoading={submitting}
+        okButtonProps={{ style: { background: '#8b5cf6' }, disabled: submitting }} width={700} centered>
         <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
             <Form.Item name="lecturerCode" label="Mã giảng viên" rules={[{ required: true, message: 'Nhập mã GV!' }]}>

@@ -71,7 +71,9 @@ export default function StudentList() {
       message.success('Đã xóa sinh viên!');
       fetchData();
     } catch (err) {
-      const msg = err?.response?.data || err?.response?.data?.message || 'Lỗi khi xóa!';
+      const msg = err?.response?.data?.message
+        || (typeof err?.response?.data === 'string' ? err.response.data : null)
+        || 'Lỗi khi xóa!';
       message.error(msg);
     }
   };

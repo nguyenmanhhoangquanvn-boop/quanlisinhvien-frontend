@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Modal, Form, Input, Select, InputNumber, message } from 'antd';
 
-const API = "http://localhost:8080/api";
+const API = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
 
 export default function ClassModal({ isOpen, onClose, onSave, classData, departments }) {
   const [form] = Form.useForm();

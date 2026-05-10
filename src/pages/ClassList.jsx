@@ -8,7 +8,7 @@ import {
 } from "@ant-design/icons";
 import ClassModal from "../components/ClassModal";
 
-const API = "http://localhost:8080/api";
+const API = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
 
 const getHeaders = () => {
   const token = localStorage.getItem("token")?.replace(/['"]+/g, '');
@@ -56,12 +56,16 @@ export default function ClassList() {
   const loadData = async () => {
     setLoading(true);
     try {
+      const safeJson = async (res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      };
       const [resCls, resDepts] = await Promise.all([
-        fetch(`${API}/classes`, { headers: getHeaders() }).then(r => r.json()),
-        fetch(`${API}/departments`, { headers: getHeaders() }).then(r => r.json())
+        fetch(`${API}/classes`, { headers: getHeaders() }).then(safeJson),
+        fetch(`${API}/departments`, { headers: getHeaders() }).then(safeJson),
       ]);
-      setClasses(resCls);
-      setDepartments(resDepts);
+      setClasses(Array.isArray(resCls) ? resCls : []);
+      setDepartments(Array.isArray(resDepts) ? resDepts : []);
     } catch {
       message.error("Lỗi tải dữ liệu!");
     } finally {

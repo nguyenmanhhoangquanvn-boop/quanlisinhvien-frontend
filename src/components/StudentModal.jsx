@@ -19,6 +19,7 @@ export default function StudentModal({ open, onClose, onSuccess, student, depart
   const [classes, setClasses] = useState([]);
   const [selectedLopId, setSelectedLopId] = useState(null);
   const [selectedKhoa, setSelectedKhoa] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
   // Email preview khi thêm mới: theo dõi studentCode để hiện email dự kiến
   const [studentCodeInput, setStudentCodeInput] = useState('');
@@ -82,17 +83,18 @@ export default function StudentModal({ open, onClose, onSuccess, student, depart
   };
 
   const handleSubmit = async () => {
+    if (submitting) return;
     let values;
     try {
       values = await form.validateFields();
     } catch { return; }
 
+    setSubmitting(true);
     try {
       const payload = {
         ...values,
         ngaySinh: values.ngaySinh ? values.ngaySinh.format('DD/MM/YYYY') : null,
         lop: selectedLopId ? { id: selectedLopId } : null,
-        // Nếu thêm mới và email rỗng → để trống, backend sẽ tự generate
         email: values.email?.trim() || '',
       };
 
@@ -105,8 +107,12 @@ export default function StudentModal({ open, onClose, onSuccess, student, depart
       }
       onSuccess();
     } catch (err) {
-      const errMsg = err?.response?.data || err?.response?.data?.message || 'Lỗi khi lưu dữ liệu!';
-      message.error(typeof errMsg === 'string' ? errMsg : 'Lỗi khi lưu dữ liệu!');
+      const errMsg = err?.response?.data?.message
+        || (typeof err?.response?.data === 'string' ? err.response.data : null)
+        || 'Lỗi khi lưu dữ liệu!';
+      message.error(errMsg);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -114,6 +120,8 @@ export default function StudentModal({ open, onClose, onSuccess, student, depart
     <Modal
       title={student ? 'Sửa thông tin sinh viên' : 'Thêm sinh viên mới'}
       open={open} onOk={handleSubmit} onCancel={onClose} width={560}
+      confirmLoading={submitting}
+      okButtonProps={{ disabled: submitting }}
     >
       <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
 

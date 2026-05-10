@@ -140,7 +140,7 @@ export default function AttendanceManagement() {
   ), [sessions, searchText]);
 
   const stats = useMemo(() => {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = dayjs().format('YYYY-MM-DD');
     const avg = sessions.length
       ? Math.round(sessions.reduce((a, s) => a + (s.attendanceRate || 0), 0) / sessions.length) : 0;
     return {
