@@ -278,29 +278,43 @@ function OtpDemoBanner({ username }) {
 
 function OtpInput({ value, onChange }) {
   const inputs = useRef([]);
-  const digits = (value || "      ").split("").slice(0, 6);
+  const digits = Array.from({ length: 6 }, (_, i) => (value || "")[i] || "");
 
   const handleKey = (i, e) => {
     if (e.key === "Backspace") {
+      e.preventDefault();
       const next = [...digits];
-      if (next[i] && next[i] !== " ") { next[i] = " "; onChange(next.join("").trimEnd()); }
-      else if (i > 0) inputs.current[i - 1]?.focus();
-      return;
+      if (next[i]) {
+        next[i] = "";
+        onChange(next.join(""));
+      } else if (i > 0) {
+        next[i - 1] = "";
+        onChange(next.join(""));
+        inputs.current[i - 1]?.focus();
+      }
+    } else if (/^\d$/.test(e.key)) {
+      e.preventDefault();
+      const next = [...digits];
+      next[i] = e.key;
+      onChange(next.join(""));
+      if (i < 5) inputs.current[i + 1]?.focus();
+    } else if (e.key === "ArrowLeft" && i > 0) {
+      e.preventDefault();
+      inputs.current[i - 1]?.focus();
+    } else if (e.key === "ArrowRight" && i < 5) {
+      e.preventDefault();
+      inputs.current[i + 1]?.focus();
     }
-    if (e.key === "ArrowLeft" && i > 0) inputs.current[i - 1]?.focus();
-    if (e.key === "ArrowRight" && i < 5) inputs.current[i + 1]?.focus();
   };
-  const handleChange = (i, e) => {
-    const ch = e.target.value.replace(/\D/g, "").slice(-1);
-    if (!ch) return;
-    const next = [...digits]; next[i] = ch;
-    onChange(next.join(""));
-    if (i < 5) inputs.current[i + 1]?.focus();
-  };
+  const handleChange = () => {};
   const handlePaste = (e) => {
-    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
-    if (pasted) { onChange(pasted.padEnd(6, " ").slice(0, 6)); inputs.current[Math.min(pasted.length, 5)]?.focus(); }
     e.preventDefault();
+    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    if (pasted) {
+      const next = Array.from({ length: 6 }, (_, i) => pasted[i] || "");
+      onChange(next.join(""));
+      inputs.current[Math.min(pasted.length, 5)]?.focus();
+    }
   };
 
   return (
